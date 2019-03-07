@@ -1,6 +1,9 @@
 <?php
   class Backup{
     const DEFAULT_KEY = "DEFAULT_KEY";
+    const METHOD = "AES-256-CBC";
+    const IV = "16_BYTES_LONG_IV";
+
     /* You can define your own backup key. */
 
     public static function create($path = "./", $key = self::DEFAULT_KEY){
@@ -85,18 +88,16 @@
         mb_substr($bundle, 0, 64, '8bit')
       );
     }
-    private static function encrypt($string, $key) {
-      $iv = random_bytes(16);
-      $result = self::sign(openssl_encrypt($string, 'aes-256-ctr', $key, OPENSSL_RAW_DATA, $iv), $key);
-      return bin2hex($iv) . bin2hex($result);
+
+    public static function encrypt($string, $key){
+      return base64_encode(
+        openssl_encrypt($string, self::METHOD, $key, false, self::IV)
+      );
     }
-    private static function decrypt($hash, $key) {
-      $iv = hex2bin(substr($hash, 0, 32));
-      $data = hex2bin(substr($hash, 32));
-      if (!self::verify($data, $key)) {
-        return null;
-      }
-      return openssl_decrypt(mb_substr($data, 64, null, '8bit'), 'aes-256-ctr', $key, OPENSSL_RAW_DATA, $iv);
+    public static function decrypt($string, $key){
+      return openssl_decrypt(
+        base64_decode($string), self::METHOD, $key, false, self::IV
+      );
     }
 
     /* Functions below are just to add small functionality */
